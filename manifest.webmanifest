@@ -1,0 +1,11 @@
+{
+  "name": "ぶらりにっぽん",
+  "short_name": "ぶらりにっぽん",
+  "description": "日本中をのんびり移動して地理や道路を覚えるゲーム",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1d3f5e",
+  "theme_color": "#1d3f5e",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
