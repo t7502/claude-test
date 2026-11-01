@@ -78,3 +78,9 @@ python3 -m http.server 8000
 - 住所：[国土地理院 逆ジオコーダ](https://maps.gsi.go.jp/)
 - 地図・道路・建物：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, [OpenMapTiles](https://openmaptiles.org/), 配信 [OpenFreeMap](https://openfreemap.org/)
 - 標高：[Terrain Tiles (Mapzen / AWS Open Data)](https://registry.opendata.aws/terrain-tiles/)
+
+---
+
+## おまけ：e ドラゴンボールZ 超覚醒（パチンコシミュレーター）
+
+[`pachinko-dbz/`](pachinko-dbz/) にドラゴンボールZテーマのファンメイド・パチンコ台があります。`pachinko-dbz/index.html` を開くと遊べます。詳細は [pachinko-dbz/README.md](pachinko-dbz/README.md)。

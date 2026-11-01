@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f24">
+  <title>e ドラゴンボールZ 超覚醒 — パチンコシミュレーター（ファンメイド）</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="logo"><span class="e">e</span> DRAGON BALL Z <b>超覚醒</b></div>
+    <div class="top-r"><span id="specLabel"></span><span id="modeLabel" class="mode-label">通常時</span></div>
+  </header>
+
+  <main class="wrap">
+    <!-- ================= 台 ================= -->
+    <section id="machine" class="machine m-normal">
+      <div class="frame-top"><span class="ft-e">e</span>DRAGON BALL Z<small>超覚醒 ～SUPER SAIYAN RUSH～</small></div>
+      <div class="board">
+        <canvas id="boardCanvas"></canvas>
+        <div id="lcd" class="lcd">
+          <div class="lcd-bg"><span id="lcdStage">カメハウス</span></div>
+          <div id="lcdInfo" class="lcd-info"></div>
+          <div id="reels" class="reels">
+            <div class="reel"></div><div class="reel"></div><div class="reel"></div>
+          </div>
+          <div id="miniReels" class="mini-reels"></div>
+          <div id="lcdFx" class="lcd-fx"></div>
+        </div>
+        <div id="gimShenron" class="gim-shenron"><span>神龍</span></div>
+        <div class="gim-scouter"></div>
+        <div class="holds">
+          <div id="holdHeso" class="hold-row"></div>
+          <i id="holdCur" class="hold cur empty"></i>
+          <div id="holdDen" class="hold-row den"></div>
+        </div>
+        <div class="heso"><span>START</span></div>
+        <div class="denchu"><span>電チュー</span></div>
+        <div class="attacker"><span>ATTACKER</span></div>
+      </div>
+      <div class="frame-bottom">
+        <button id="pushBtn" class="push" aria-label="PUSHボタン"><span>PUSH</span></button>
+        <div class="fb-help">Space / Enter でもボタン操作できます</div>
+        <div id="migiUchi" class="migi">右打ち ➡</div>
+      </div>
+    </section>
+
+    <!-- ================= パネル ================= -->
+    <section class="panel">
+      <nav class="tabs">
+        <button class="tab on" data-pane="pPlay">実戦</button>
+        <button class="tab" data-pane="pGallery">演出鑑賞</button>
+        <button class="tab" data-pane="pSpec">スペック</button>
+        <button class="tab" data-pane="pRecords">記録</button>
+        <button class="tab" data-pane="pSettings">設定</button>
+      </nav>
+
+      <!-- 実戦 -->
+      <div id="pPlay" class="pane on">
+        <div class="counter">
+          <div class="c-main">
+            <div><label>現在</label><b id="dSince">0</b><small>回転</small></div>
+            <div><label>大当り/初当り</label><b id="dHits">0 / 0</b></div>
+            <div><label>総回転</label><b id="dTotal">0</b></div>
+          </div>
+          <div class="c-grid">
+            <div><label>持ち玉</label><b id="dBalls">0</b></div>
+            <div><label>差玉</label><b id="dDiff">0</b></div>
+            <div><label>投資</label><b id="dInvest">¥0</b></div>
+            <div><label>収支（換金）</label><b id="dProfit">¥0</b></div>
+            <div><label>回収率</label><b id="dRate">—</b></div>
+            <div><label>初当り確率</label><b id="dProb">—</b></div>
+            <div><label>RUSH突入</label><b id="dRush">0</b></div>
+            <div><label>最大連チャン</label><b id="dMax">0連</b></div>
+            <div><label>実測回転率</label><b id="dRealRot">—</b></div>
+            <div><label>仕事量</label><b id="dEv">¥0</b></div>
+          </div>
+          <div class="budget"><label>投資 / 上限</label><span id="dBudget"></span><div class="bar"><i id="budgetBar"></i></div></div>
+        </div>
+
+        <div class="ctrl">
+          <button id="handleBtn" class="btn big primary">ハンドル ON（打ち出し）</button>
+          <div class="row">
+            <button id="ffHit" class="btn ff">⏩ 当りまで早送り</button>
+            <button id="ffRush" class="btn ff">⏩ RUSH・時短終了まで</button>
+          </div>
+          <div class="row">
+            <button id="ff100" class="btn s">100回転 早送り</button>
+            <button id="ff1000" class="btn s">1000回転 早送り</button>
+            <button id="skipFx" class="btn s">演出スキップ</button>
+          </div>
+          <div class="speed"><label>倍速</label>
+            <button data-sp="1">×1</button><button data-sp="2">×2</button><button data-sp="4">×4</button><button data-sp="8">×8</button><button data-sp="16">×16</button><button data-sp="32">×32</button>
+          </div>
+          <div class="row">
+            <button id="lendBtn" class="btn s">現金で貸出</button>
+            <button id="settleBtn" class="btn s warn">精算して記録</button>
+          </div>
+          <p class="hint">キー操作：H＝ハンドル / F＝当りまで早送り / S＝演出スキップ / Space＝ボタン</p>
+        </div>
+
+        <h4>スランプグラフ（差玉）</h4>
+        <canvas id="slump" width="560" height="170"></canvas>
+        <h4>大当り履歴</h4>
+        <ul id="history" class="history"></ul>
+      </div>
+
+      <!-- 演出鑑賞 -->
+      <div id="pGallery" class="pane">
+        <h3>演出鑑賞モード</h3>
+        <p class="note">好きなリーチ・予告・結果を選んで再生できます。ボタン演出も実際に押せます。</p>
+        <form id="galleryForm" onsubmit="return false"></form>
+      </div>
+
+      <!-- スペック -->
+      <div id="pSpec" class="pane"><div id="specBody"></div></div>
+
+      <!-- 記録 -->
+      <div id="pRecords" class="pane">
+        <h3>収支記録</h3>
+        <div id="recSummary"></div>
+        <h4>トータル収支グラフ</h4>
+        <canvas id="recGraph" width="560" height="170"></canvas>
+        <div class="row"><button id="csvBtn" class="btn s">CSVで書き出し</button><button id="newSession" class="btn s">今の台を精算して記録</button><button id="clearRec" class="btn s warn">記録を全消去</button></div>
+        <div class="table-wrap"><table id="recTable" class="rec"></table></div>
+      </div>
+
+      <!-- 設定 -->
+      <div id="pSettings" class="pane">
+        <form id="settingsForm" onsubmit="return false">
+          <h3>台選び</h3>
+          <label class="f">機種<select id="specSel"></select></label>
+          <button id="applySpec" class="btn s" type="button">この機種に移動（今の台は精算）</button>
+
+          <h3>釘・お店の状況</h3>
+          <label class="f">回転率（千円あたり）：<b id="rotVal">18</b>回転
+            <input id="rot" type="range" min="8" max="35" step="0.5"></label>
+          <p class="note">「釘の広さ」です。ヘソ入賞率がこの回転数になるよう自動調整されます。実際の回転は確率で上下します。</p>
+          <label class="f">交換率<select id="rate"></select></label>
+          <label class="f">電サポ中の玉増減（1回転あたり）
+            <select id="densapoCost">
+              <option value="-0.5">+0.5玉（増える・甘い）</option>
+              <option value="0">±0玉</option>
+              <option value="0.2">-0.2玉（標準）</option>
+              <option value="0.5">-0.5玉（削り）</option>
+              <option value="1">-1.0玉（キツい）</option>
+            </select></label>
+          <label class="f">アタッカー（1Rあたりの削り）
+            <select id="netLoss">
+              <option value="3">-3玉（優秀）</option>
+              <option value="7">-7玉（標準）</option>
+              <option value="12">-12玉（削り）</option>
+              <option value="20">-20玉（キツい）</option>
+            </select></label>
+
+          <h3>投資</h3>
+          <label class="f">投資上限（円）<input id="budget" type="number" min="1000" step="1000"></label>
+          <label class="f">貸出単位
+            <select id="lendUnit"><option value="500">500円（125玉）</option><option value="1000">1000円（250玉）</option></select></label>
+
+          <h3>演出・操作</h3>
+          <label class="c"><input id="autoBtn" type="checkbox"> ボタン自動押し（オート）</label>
+          <label class="c"><input id="shortMiss" type="checkbox"> ハズレ変動を短縮</label>
+          <label class="c"><input id="stopAt4" type="checkbox"> 保留4個で打ち出し停止（自動止め打ち）</label>
+          <label class="c"><input id="ffShowHit" type="checkbox"> 早送りで当たった変動は演出を見る</label>
+          <label class="f">音量<input id="volume" type="range" min="0" max="1" step="0.05"></label>
+          <label class="c"><input id="muted" type="checkbox"> ミュート</label>
+          <p class="note">設定は自動保存されます。回転率・交換率などは打っている途中でも変更でき、すぐ反映されます。</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal"><div class="modal-box"><div id="modalBody"></div><button class="btn" data-act="close">閉じる</button></div></div>
+  <div id="toast" class="toast"></div>
+  <footer class="foot">ファンメイドの個人用シミュレーターです。実在の遊技機・メーカー・版権元とは関係ありません。キャラクター画像は使用せず、文字と図形で表現しています。</footer>
+
+  <script src="js/spec.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/stage.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/director.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
