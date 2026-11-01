@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d3f5e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ぶらりにっぽん">
+  <title>ぶらりにっぽん — 日本をのんびり移動して地理を覚える</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="mode-setup">
+  <div id="map"></div>
+
+  <!-- ===== 出発前の設定画面 ===== -->
+  <section id="setup" class="sheet">
+    <button id="sheetHandle" class="sheet-handle" aria-label="パネルを開閉"></button>
+    <h1>ぶらりにっぽん</h1>
+    <p class="lead">地図をタップして<b>出発地</b>を選んでください</p>
+
+    <div class="field">
+      <div class="field-label">出発地</div>
+      <div id="startName" class="start-name">未選択</div>
+      <div id="spotChips" class="chips"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">移動モード</div>
+      <div id="groupTabs" class="tabs"></div>
+      <div id="vehicleChips" class="chips"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">倍速 <span id="multLabel" class="mult">×1</span></div>
+      <input id="multRange" type="range" min="0" max="13" step="1" value="0">
+      <div id="multHint" class="hint"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">目的地（任意・方角と距離を表示）</div>
+      <select id="destSelect"><option value="">設定しない（自由に移動）</option></select>
+    </div>
+
+    <button id="startBtn" class="primary" disabled>出発する</button>
+    <p class="credit">航空写真: 国土地理院 ／ 地図: © OpenStreetMap contributors, OpenMapTiles, OpenFreeMap ／ 地形: Terrain Tiles</p>
+  </section>
+
+  <!-- ===== 移動中の表示 ===== -->
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <div id="placeBox" class="place">
+        <div id="placePref" class="pref"></div>
+        <div id="placeName" class="pname">—</div>
+      </div>
+      <button id="pauseBtn" class="round" aria-label="メニュー">☰</button>
+    </div>
+    <div id="roadBox" class="road" hidden><span id="roadRef" class="ref"></span><span id="roadName"></span></div>
+
+    <div class="hud-left">
+      <div class="speed"><span id="spd">0</span><small>km/h</small></div>
+      <div id="effSpd" class="eff"></div>
+      <div id="altBox" class="eff" hidden></div>
+      <div class="stats"><span id="dist">0 m</span><br><span id="gtime">0分</span></div>
+    </div>
+
+    <div class="hud-right">
+      <div id="mini" class="mini"><div id="miniMap"></div><div class="mini-me"></div></div>
+      <div id="compass" class="compass"><div id="needle" class="needle">N</div></div>
+      <div id="destBox" class="dest" hidden><div id="destArrow" class="arrow">➤</div><div><div id="destName"></div><div id="destDist"></div></div></div>
+      <div id="lmBox" class="dest lm"><div id="lmArrow" class="arrow">➤</div><div><div id="lmName"></div><div id="lmDist"></div></div></div>
+    </div>
+
+    <div id="vehicle" class="vehicle"></div>
+    <div id="toast" class="toast"></div>
+
+    <div class="camera-btns">
+      <button id="zoomIn" class="round sm">＋</button>
+      <button id="zoomOut" class="round sm">－</button>
+      <button id="camBtn" class="round sm" title="視点切替">👁</button>
+    </div>
+
+    <div class="controls">
+      <div class="steer">
+        <button id="leftBtn" class="ctl" aria-label="左">◀</button>
+        <button id="rightBtn" class="ctl" aria-label="右">▶</button>
+      </div>
+      <div class="sidebtns">
+        <button id="assistBtn" class="pill on">道路アシスト</button>
+        <button id="cruiseBtn" class="pill">クルーズ</button>
+        <button id="multBtn" class="pill">×1</button>
+      </div>
+      <div class="pedals">
+        <button id="brakeBtn" class="ctl pedal brake">ブレーキ</button>
+        <button id="accelBtn" class="ctl pedal accel">アクセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 一時停止メニュー ===== -->
+  <section id="pause" class="modal" hidden>
+    <div class="modal-body">
+      <h2>メニュー</h2>
+      <div class="field">
+        <div class="field-label">倍速 <span id="multLabel2" class="mult">×1</span></div>
+        <input id="multRange2" type="range" min="0" max="13" step="1" value="0">
+      </div>
+      <div class="field">
+        <div class="field-label">乗り物を乗り換える</div>
+        <div id="vehicleChips2" class="chips"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">表示</div>
+        <label class="toggle"><input type="checkbox" id="optRoads" checked> 道路を色分け表示</label>
+        <label class="toggle"><input type="checkbox" id="optBuildings" checked> 3D建物</label>
+        <label class="toggle"><input type="checkbox" id="optTerrain" checked> 地形（山の起伏）</label>
+        <label class="toggle"><input type="checkbox" id="optLabels" checked> 地名・駅名</label>
+        <label class="toggle"><input type="checkbox" id="optMini" checked> ミニマップ</label>
+      </div>
+      <div class="row">
+        <button id="toSetupBtn">出発地を選び直す</button>
+        <button id="resumeBtn" class="primary">再開</button>
+      </div>
+      <p class="hint">PCではキーボードでも操作できます：↑ アクセル／↓ ブレーキ／←→ ハンドル／C クルーズ</p>
+    </div>
+  </section>
+
+  <script src="vendor/maplibre-gl/maplibre-gl.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/style.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/vt.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
