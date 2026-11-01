@@ -408,3 +408,4 @@ details summary { cursor: pointer; color: #ffcf8a; font-size: 13px; margin-top: 
 .migi { position: static; margin-left: auto; font-size: 16px; padding: 8px 14px; }
 @media (max-width: 600px) { #specLabel { display: none; } .logo { font-size: 15px; } }
 .ytable td { word-break: break-all; }
+.modal.ask { z-index: 130; }

@@ -81,7 +81,7 @@ const App = {
   /* 精算して記録 */
   async settle() {
     if (this.busy || this.inBonus || this.m.mode !== 'normal') {
-      if (!confirm('大当り中・RUSH中です。現在の持ち玉で精算しますか？\n（残りの電サポは放棄します）')) return;
+      if (!(await ask('大当り中・RUSH中です。現在の持ち玉で精算しますか？（残りの電サポは放棄します）'))) return;
     }
     await this.pauseAndWait();
     const m = this.m;
@@ -433,7 +433,7 @@ const App = {
     $('#applySpec').addEventListener('click', async () => {
       const id = $('#specSel').value;
       if (id === this.m.spec.id) { this.toast('同じ機種です'); return; }
-      if (this.m.c.totalSpins > 0 && !confirm('台を移動します。今の台は精算して記録しますか？\n[OK]＝精算して移動 / [キャンセル]＝やめる')) return;
+      if (this.m.c.totalSpins > 0 && !(await ask('台を移動します。今の台は精算して記録します。よろしいですか？'))) return;
       this.set.specId = id; this.saveSettings();
       if (this.m.c.totalSpins > 0 || this.m.invest > 0) await this.settle();
       else this.newSession();
@@ -611,8 +611,8 @@ const App = {
         <td>${yen(r.invest)}</td><td>${yen(r.back)}</td><td class="${r.profit >= 0 ? 'plus' : 'minus'}">${r.profit >= 0 ? '+' : ''}${yen(r.profit)}</td>
         <td>${r.returnRate == null ? '—' : (r.returnRate * 100).toFixed(0) + '%'}</td>
         <td><button class="mini" data-del="${r.id}">削除</button></td></tr>`).join('');
-    $$('#recTable [data-del]').forEach(b => b.addEventListener('click', () => {
-      if (!confirm('この記録を削除しますか？')) return;
+    $$('#recTable [data-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!(await ask('この記録を削除しますか？'))) return;
       LS.set('records', LS.get('records', []).filter(r => String(r.id) !== b.dataset.del));
       this.renderRecords();
     }));
@@ -622,10 +622,20 @@ const App = {
     const head = ['開始', '終了', '機種', '回転率設定', '実測回転率', '交換率', '総回転', '通常回転', '初当り', '大当り', 'RUSH', 'LT', '最大連', '投資', '回収', '収支', '回収率', '仕事量'];
     const rows = recs.map(r => [new Date(r.start).toLocaleString('ja-JP'), new Date(r.end).toLocaleString('ja-JP'), r.specName, r.rot, r.realRot ? r.realRot.toFixed(2) : '', r.rate, r.spins, r.spinsNormal, r.firstHits, r.hits, r.rush, r.lt, r.maxChain, r.invest, r.back, r.profit, r.returnRate == null ? '' : (r.returnRate * 100).toFixed(1), r.ev]);
     const csv = '﻿' + [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `dbz_pachinko_records_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = `dbz_pachinko_records_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    } catch { /* ダウンロード不可の環境 */ }
+    this.showModal(`<h3>CSV</h3><p class="note">ダウンロードできない環境では、下の内容をコピーして表計算ソフトに貼り付けてください。</p>
+      <textarea id="csvText" readonly style="width:100%;height:200px;background:#0a0f1a;color:#fff;font-size:11px">${esc(csv.slice(1))}</textarea>
+      <div class="row"><button class="btn primary" id="csvCopy" type="button">コピー</button></div>`);
+    $('#csvCopy').addEventListener('click', async () => {
+      const ta = $('#csvText');
+      try { await navigator.clipboard.writeText(ta.value); this.toast('コピーしました'); }
+      catch { ta.select(); try { document.execCommand('copy'); this.toast('コピーしました'); } catch { this.toast('手動で選択してコピーしてください'); } }
+    });
   },
 
   /* ---------------- 演出鑑賞 ---------------- */
@@ -765,6 +775,21 @@ const App = {
   },
 };
 
+/* ---------- 確認ダイアログ（confirmの代わり） ---------- */
+function ask(msg) {
+  return new Promise(resolve => {
+    const d = document.createElement('div');
+    d.className = 'modal on ask';
+    d.innerHTML = `<div class="modal-box"><p>${esc(msg)}</p><div class="row"><button class="btn primary" data-a="1" type="button">OK</button><button class="btn" data-a="0" type="button">キャンセル</button></div></div>`;
+    d.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-a]');
+      if (!b && e.target !== d) return;
+      d.remove(); resolve(!!b && b.dataset.a === '1');
+    });
+    document.body.appendChild(d);
+  });
+}
+
 /* ---------- グラフ描画 ---------- */
 function thinGraph(g, n) {
   if (g.length <= n) return g;
@@ -830,6 +855,6 @@ function drawHist(cv, vals) {
 window.addEventListener('DOMContentLoaded', () => {
   App.init();
   $('#csvBtn').addEventListener('click', () => App.exportCsv());
-  $('#clearRec').addEventListener('click', () => { if (confirm('全ての記録を削除しますか？（元に戻せません）')) { LS.set('records', []); App.renderRecords(); } });
+  $('#clearRec').addEventListener('click', async () => { if (await ask('全ての記録を削除しますか？（元に戻せません）')) { LS.set('records', []); App.renderRecords(); } });
   $('#newSession').addEventListener('click', () => App.settle());
 });
